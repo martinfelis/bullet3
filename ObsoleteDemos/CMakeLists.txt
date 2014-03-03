@@ -11,7 +11,8 @@ IF (USE_GLUT)
 			SET(SharedDemoSubdirs
 				OpenGL   
 				CcdPhysicsDemo   SliderConstraintDemo GenericJointDemo Raytracer
-				RagdollDemo ForkLiftDemo BasicDemo FeatherstoneMultiBodyDemo RollingFrictionDemo RaytestDemo VoronoiFractureDemo 
+				RagdollDemo ForkLiftDemo BasicDemo FeatherstoneMultiBodyDemo
+				FeatherstoneIntegratorDemo RollingFrictionDemo RaytestDemo VoronoiFractureDemo 
 				GyroscopicDemo FractureDemo Box2dDemo BspDemo MovingConcaveDemo VehicleDemo
 				UserCollisionAlgorithm CharacterDemo SoftDemo 
 				CollisionInterfaceDemo ConcaveConvexcastDemo SimplexDemo DynamicControlDemo
@@ -55,6 +56,7 @@ ELSE (USE_GLUT)
 		InternalEdgeDemo
 		GyroscopicDemo
 		FeatherstoneMultiBodyDemo
+		FeatherstoneIntegratorDemo
 		GenericJointDemo 
 		SerializeDemo 
 		SoftDemo

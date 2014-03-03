@@ -1,20 +1,23 @@
 /*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2013 Erwin Coumans  http://bulletphysics.org
+	 Bullet Continuous Collision Detection and Physics Library
+	 Copyright (c) 2013 Erwin Coumans  http://bulletphysics.org
 
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose, 
-including commercial applications, and to alter it and redistribute it freely, 
-subject to the following restrictions:
+	 This software is provided 'as-is', without any express or implied warranty.
+	 In no event will the authors be held liable for any damages arising from the use of this software.
+	 Permission is granted to anyone to use this software for any purpose, 
+	 including commercial applications, and to alter it and redistribute it freely, 
+	 subject to the following restrictions:
 
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
+	 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+	 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+	 3. This notice may not be removed or altered from any source distribution.
+	 */
 
 ///experimental support for Featherstone multi body (articulated hierarchies)
 
+#include <iostream>
+
+using namespace std;
 
 ///create 125 (5x5x5) dynamic object
 #define ARRAY_SIZE_X 5
@@ -32,7 +35,7 @@ float friction = 1.;
 #define START_POS_Y 2
 #define START_POS_Z -3
 
-#include "FeatherstoneMultiBodyDemo.h"
+#include "FeatherstoneIntegratorDemo.h"
 
 #include "BulletDynamics/Featherstone/btMultiBody.h"
 #include "BulletDynamics/Featherstone/btMultiBodyConstraintSolver.h"
@@ -57,13 +60,13 @@ static GLDebugDrawer gDebugDraw;
 float scaling = 0.4f;
 
 
-void FeatherstoneMultiBodyDemo::clientMoveAndDisplay()
+void FeatherstoneIntegratorDemo::clientMoveAndDisplay()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
 	//simple dynamics world doesn't handle fixed-time-stepping
 	float ms = getDeltaTimeMicroseconds();
-	
+
 	///step the simulation
 	if (m_dynamicsWorld)
 	{
@@ -74,9 +77,9 @@ void FeatherstoneMultiBodyDemo::clientMoveAndDisplay()
 		btVector3 aabbMin(1,1,1);
 		btVector3 aabbMax(2,2,2);
 
-		
+
 	}
-		
+
 	renderme(); 
 
 	glFlush();
@@ -87,10 +90,10 @@ void FeatherstoneMultiBodyDemo::clientMoveAndDisplay()
 
 
 
-void FeatherstoneMultiBodyDemo::displayCallback(void) {
+void FeatherstoneIntegratorDemo::displayCallback(void) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
-	
+
 	renderme();
 
 	//optional but useful: debug drawing to detect problems
@@ -105,7 +108,7 @@ void FeatherstoneMultiBodyDemo::displayCallback(void) {
 
 
 
-void	FeatherstoneMultiBodyDemo::initPhysics()
+void	FeatherstoneIntegratorDemo::initPhysics()
 {
 	//m_idle=true;
 	setTexturing(true);
@@ -129,14 +132,14 @@ void	FeatherstoneMultiBodyDemo::initPhysics()
 	btMultiBodyDynamicsWorld* world = new btMultiBodyDynamicsWorld(m_dispatcher,m_broadphase,sol,m_collisionConfiguration);
 	m_dynamicsWorld = world;
 	m_dynamicsWorld->setDebugDrawer(&gDebugDraw);
-	
+
 	m_dynamicsWorld->setGravity(btVector3(0,-10,0));
 
 	///create a few basic rigid bodies
 	btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(50.),btScalar(50.),btScalar(50.)));
 	//groundShape->initializePolyhedralFeatures();
-//	btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),50);
-	
+	//	btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),50);
+
 	m_collisionShapes.push_back(groundShape);
 
 	btTransform groundTransform;
@@ -169,28 +172,6 @@ void	FeatherstoneMultiBodyDemo::initPhysics()
 		float start_x = START_POS_X - ARRAY_SIZE_X/2;
 		float start_y = START_POS_Y;
 		float start_z = START_POS_Z - ARRAY_SIZE_Z/2;
-
-		for (int k=0;k<ARRAY_SIZE_Y;k++)
-		{
-			for (int i=0;i<ARRAY_SIZE_X;i++)
-			{
-				for(int j = 0;j<ARRAY_SIZE_Z;j++)
-				{
-					startTransform.setOrigin(btVector3(
-										btScalar(3.0*i + start_x),
-										btScalar(3.0*k + start_y),
-										btScalar(3.0*j + start_z)));
-
-			
-					//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-					btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-					btRigidBody::btRigidBodyConstructionInfo rbInfo(mass,myMotionState,colShape,localInertia);
-					btRigidBody* body = new btRigidBody(rbInfo);
-					
-					m_dynamicsWorld->addRigidBody(body);//,1,1+2);
-				}
-			}
-		}
 	}
 
 	btMultiBodySettings settings;
@@ -198,31 +179,22 @@ void	FeatherstoneMultiBodyDemo::initPhysics()
 	settings.m_basePosition =  btVector3 (60,29.5,-2)*scaling;
 	settings.m_isFixedBase = false;
 	settings.m_disableParentCollision = true;//the self-collision has conflicting/non-resolvable contact normals
-	
+
 	settings.m_usePrismatic = true;
 	settings.m_canSleep = true;
 	settings.m_createConstraints = true;
 
 	//btMultiBody* createFeatherstoneMultiBody(class btMultiBodyDynamicsWorld* world, int numLinks, const btVector3& basePosition,bool isFixedBase, bool usePrismatic, bool canSleep, bool createConstraints);
 
-	btMultiBody* mbA = createFeatherstoneMultiBody(world, settings);
-		
 	settings.m_numLinks = 10;
-	settings.m_basePosition = btVector3 (0,29.5,-settings.m_numLinks*4.f);
+	settings.m_basePosition = btVector3 (0,38,-settings.m_numLinks*4.f);
 	settings.m_isFixedBase = true;
 	settings.m_usePrismatic = false;
+	settings.m_useSpherical = true;
 
 	btMultiBody* mbB = createFeatherstoneMultiBody(world, settings);
-	settings.m_basePosition = btVector3 (-20*scaling,29.5*scaling,-settings.m_numLinks*4.f*scaling);
-	settings.m_isFixedBase = false;
-	btMultiBody* mbC = createFeatherstoneMultiBody(world, settings);
 
-	settings.m_basePosition = btVector3 (-20,9.5,-settings.m_numLinks*4.f);
-	settings.m_isFixedBase = true;
-	settings.m_usePrismatic = true;
-	settings.m_disableParentCollision = true;
-	
-	btMultiBody* mbPrim= createFeatherstoneMultiBody(world, settings);
+	//	btMultiBody* mbPrim= createFeatherstoneMultiBody(world, settings);
 
 	//btMultiBody* mbB = createFeatherstoneMultiBody(world, 15, btVector3 (0,29.5,-2), false,true,true);
 #if 0
@@ -236,24 +208,11 @@ void	FeatherstoneMultiBodyDemo::initPhysics()
 		int linkA = -1;
 		int linkB = -1;
 
-		btVector3 pivotInAlocal = mbA->worldPosToLocal(linkA, pivotInAworld);
 		btVector3 pivotInBlocal = mbB->worldPosToLocal(linkB, pivotInAworld);
-		btMultiBodyPoint2Point* p2p = new btMultiBodyPoint2Point(mbA,linkA,mbB,linkB,pivotInAlocal,pivotInBlocal);
 		world->addMultiBodyConstraint(p2p);
 	}
 #endif
-	bool testRemoveLinks = false;
-	if (testRemoveLinks)
-	{
-		while (mbA->getNumLinks())
-		{
-			btCollisionObject* col = mbA->getLink(mbA->getNumLinks()-1).m_collider;
-			m_dynamicsWorld->removeCollisionObject(col);
-			delete col;
-			mbA->setNumLinks(mbA->getNumLinks()-1);
-		}
-	}
-	
+
 	if (1)//useGroundShape
 	{
 		btScalar mass(0.);
@@ -277,16 +236,16 @@ void	FeatherstoneMultiBodyDemo::initPhysics()
 
 }
 
-btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMultiBodyDynamicsWorld* world, const btMultiBodySettings& settings)
+btMultiBody* FeatherstoneIntegratorDemo::createFeatherstoneMultiBody(class btMultiBodyDynamicsWorld* world, const btMultiBodySettings& settings)
 {
-	
+
 	int n_links = settings.m_numLinks;
 	float mass = 13.5*scaling;
 	btVector3 inertia = btVector3 (91,344,253)*scaling*scaling;
-	
-	
+
+
 	btMultiBody * bod = new btMultiBody(n_links, mass, inertia, settings.m_isFixedBase, settings.m_canSleep, false);
-//		bod->setHasSelfCollision(false);
+	//		bod->setHasSelfCollision(false);
 
 	//btQuaternion orn(btVector3(0,0,1),-0.25*SIMD_HALF_PI);//0,0,0,1);
 	btQuaternion orn(0,0,0,1);
@@ -296,17 +255,17 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 	bod->setBaseVel(vel);
 
 	{
-			
+
 		btVector3 joint_axis_hinge(1,0,0);
 		btVector3 joint_axis_prismatic(0,0,1);
 		btQuaternion parent_to_child = orn.inverse();
 		btVector3 joint_axis_child_prismatic = quatRotate(parent_to_child ,joint_axis_prismatic);
 		btVector3 joint_axis_child_hinge = quatRotate(parent_to_child , joint_axis_hinge);
-        
+
 		int this_link_num = -1;
 		int link_num_counter = 0;
 
-		
+
 
 		btVector3 pos = btVector3 (0,0,9.0500002)*scaling;
 
@@ -320,21 +279,34 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 
 			const int child_link_num = link_num_counter++;
 
-			
+
 
 			if (settings.m_usePrismatic)// && i==(n_links-1))
 			{
-					bod->setupPrismatic(child_link_num, mass, inertia, this_link_num,
+				bod->setupPrismatic(child_link_num, mass, inertia, this_link_num,
 						parent_to_child, joint_axis_child_prismatic, quatRotate(parent_to_child , pos),settings.m_disableParentCollision);
 
-			} else
+				bod->setJointPos(child_link_num, initial_joint_angle);
+			} 
+			else if (settings.m_useSpherical)
 			{
-				bod->setupRevolute(child_link_num, mass, inertia, this_link_num,parent_to_child, joint_axis_child_hinge,
-										joint_axis_position,quatRotate(parent_to_child , (pos - joint_axis_position)),settings.m_disableParentCollision);
+				bod->setupSpherical(child_link_num, mass, inertia,
+						this_link_num, parent_to_child,
+						joint_axis_position,quatRotate(parent_to_child , (pos - joint_axis_position)),
+						settings.m_disableParentCollision);
+//				btScalar pos[4] = {0.f, 0.f, 0.f, 0.f};
+//				bod->setJointPosMultiDof (child_link_num, pos);
+
+			} else {
+				bod->setupRevolute(child_link_num, mass, inertia, 
+						this_link_num,parent_to_child,
+						joint_axis_child_hinge,
+						joint_axis_position,quatRotate(parent_to_child , (pos - joint_axis_position)),
+						settings.m_disableParentCollision);
+				bod->setJointPos(child_link_num, initial_joint_angle);
 			}
-			bod->setJointPos(child_link_num, initial_joint_angle);
 			this_link_num = i;
-		
+
 			if (0)//!useGroundShape && i==4)
 			{
 				btVector3 pivotInAworld(0,20,46);
@@ -346,14 +318,14 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 			//add some constraint limit
 			if (settings.m_usePrismatic)
 			{
-	//			btMultiBodyConstraint* con = new btMultiBodyJointLimitConstraint(bod,n_links-1,2,3);
-			
+				//			btMultiBodyConstraint* con = new btMultiBodyJointLimitConstraint(bod,n_links-1,2,3);
+
 				if (settings.m_createConstraints)
 				{	
 					btMultiBodyConstraint* con = new btMultiBodyJointLimitConstraint(bod,i,-1,1);
 					world->addMultiBodyConstraint(con);
 				}
-			
+
 			} else
 			{
 				if (settings.m_createConstraints)
@@ -374,7 +346,7 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 
 	//add a collider for the base
 	{
-			
+
 		btAlignedObjectArray<btQuaternion> world_to_local;
 		world_to_local.resize(n_links+1);
 
@@ -385,11 +357,11 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 		//float halfExtents[3]={7.5,0.05,4.5};
 		float halfExtents[3]={7.5,0.45,4.5};
 		{
-			
+
 			float pos[4]={local_origin[0].x(),local_origin[0].y(),local_origin[0].z(),1};
 			float quat[4]={-world_to_local[0].x(),-world_to_local[0].y(),-world_to_local[0].z(),world_to_local[0].w()};
 
-			
+
 			if (1)
 			{
 				btCollisionShape* box = new btBoxShape(btVector3(halfExtents[0],halfExtents[1],halfExtents[2])*scaling);
@@ -398,18 +370,18 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 
 				body->setCollisionShape(box);
 				col->setCollisionShape(box);
-								
+
 				btTransform tr;
 				tr.setIdentity();
 				tr.setOrigin(local_origin[0]);
 				tr.setRotation(btQuaternion(quat[0],quat[1],quat[2],quat[3]));
 				body->setWorldTransform(tr);
 				col->setWorldTransform(tr);
-				
+
 				world->addCollisionObject(col, 2,1+2);
 				col->setFriction(friction);
 				bod->setBaseCollider(col);
-				
+
 			}
 		}
 
@@ -421,13 +393,13 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 			local_origin[i+1] = local_origin[parent+1] + (quatRotate(world_to_local[i+1].inverse() , bod->getRVector(i)));
 		}
 
-		
+
 		for (int i=0;i<bod->getNumLinks();i++)
 		{
-		
+
 			btVector3 posr = local_origin[i+1];
 			float pos[4]={posr.x(),posr.y(),posr.z(),1};
-			
+
 			float quat[4]={-world_to_local[i+1].x(),-world_to_local[i+1].y(),-world_to_local[i+1].z(),world_to_local[i+1].w()};
 
 			btCollisionShape* box = new btBoxShape(btVector3(halfExtents[0],halfExtents[1],halfExtents[2])*scaling);
@@ -441,7 +413,7 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 			col->setWorldTransform(tr);
 			col->setFriction(friction);
 			world->addCollisionObject(col,2,1+2);
-			
+
 			bod->getLink(i).m_collider=col;
 			//app->drawBox(halfExtents, pos,quat);
 		}
@@ -453,7 +425,7 @@ btMultiBody* FeatherstoneMultiBodyDemo::createFeatherstoneMultiBody(class btMult
 }
 
 extern btScalar gOldPickingDist;
-void	FeatherstoneMultiBodyDemo::mouseMotionFunc(int x,int y)
+void	FeatherstoneIntegratorDemo::mouseMotionFunc(int x,int y)
 {
 	if (m_pickingMultiBodyPoint2Point)
 	{
@@ -482,23 +454,23 @@ void	FeatherstoneMultiBodyDemo::mouseMotionFunc(int x,int y)
 	DemoApplication::mouseMotionFunc(x,y);
 }
 
-void FeatherstoneMultiBodyDemo::removePickingConstraint()
+void FeatherstoneIntegratorDemo::removePickingConstraint()
 {
 	if (m_pickingMultiBodyPoint2Point)
 	{
 		m_pickingMultiBodyPoint2Point->getMultiBodyA()->setCanSleep(true);
-		
+
 		btMultiBodyDynamicsWorld* world = (btMultiBodyDynamicsWorld*) m_dynamicsWorld;
 		world->removeMultiBodyConstraint(m_pickingMultiBodyPoint2Point);
 		delete m_pickingMultiBodyPoint2Point;
 		m_pickingMultiBodyPoint2Point = 0;
 	}
-	
+
 	DemoApplication::removePickingConstraint();
 
 }
 
-void FeatherstoneMultiBodyDemo::pickObject(const btVector3& pickPos, const class btCollisionObject* hitObj)
+void FeatherstoneIntegratorDemo::pickObject(const btVector3& pickPos, const class btCollisionObject* hitObj)
 {
 	btVector3 pivotInA(0,0,0);
 	btMultiBodyLinkCollider* multiCol = (btMultiBodyLinkCollider*)btMultiBodyLinkCollider::upcast(hitObj);
@@ -515,7 +487,7 @@ void FeatherstoneMultiBodyDemo::pickObject(const btVector3& pickPos, const class
 		//it is not satisfying, hopefully we find a better solution (higher order integrator, using joint friction using a zero-velocity target motor with limited force etc?)
 
 		p2p->setMaxAppliedImpulse(200*scaling);
-		
+
 		btMultiBodyDynamicsWorld* world = (btMultiBodyDynamicsWorld*) m_dynamicsWorld;
 		world->addMultiBodyConstraint(p2p);
 		m_pickingMultiBodyPoint2Point =p2p; 
@@ -527,14 +499,14 @@ void FeatherstoneMultiBodyDemo::pickObject(const btVector3& pickPos, const class
 
 
 
-void	FeatherstoneMultiBodyDemo::clientResetScene()
+void	FeatherstoneIntegratorDemo::clientResetScene()
 {
 	exitPhysics();
 	initPhysics();
 }
-	
 
-void	FeatherstoneMultiBodyDemo::exitPhysics()
+
+void	FeatherstoneIntegratorDemo::exitPhysics()
 {
 
 	//cleanup in the reverse order of creation/initialization
@@ -562,16 +534,16 @@ void	FeatherstoneMultiBodyDemo::exitPhysics()
 	m_collisionShapes.clear();
 
 	delete m_dynamicsWorld;
-	
+
 	delete m_solver;
-	
+
 	delete m_broadphase;
-	
+
 	delete m_dispatcher;
 
 	delete m_collisionConfiguration;
 
-	
+
 }
 
 
